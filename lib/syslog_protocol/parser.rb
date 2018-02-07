@@ -22,6 +22,7 @@ module SyslogProtocol
     else
       packet.time = Time.now
     end
+    msg = msg.strip
     hostname = parse_hostname(msg)
     packet.hostname = hostname || origin
     if m = msg.match(/^(\w+)(: | )(.*)$/)
@@ -29,7 +30,7 @@ module SyslogProtocol
       packet.content = m[3]
     else
       packet.tag = 'unknown'
-      packet.content = msg
+      packet.content = msg.strip
     end
     packet
   end
@@ -47,11 +48,17 @@ module SyslogProtocol
   end
   
   def self.parse_time(msg)
-    msg.slice!(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(\s|[1-9])\d\s\d\d:\d\d:\d\d\s/)
+    time = msg.slice!(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(\s|[1-9])\d\s\d\d:\d\d:\d\d\s/)
+    if (time)
+      return time
+    else
+      # Parse ISO8601 date
+      return msg.slice!(/^\d\d\d\d(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?/)
+    end
   end
   
   def self.parse_hostname(msg)
-    msg.slice!(/^[\x21-\x7E]+\s/).rstrip
+    msg.slice!(/^[\x21-\x7E]+/).rstrip
   end
   
 end
